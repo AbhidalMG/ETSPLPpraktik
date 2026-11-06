@@ -246,7 +246,7 @@ class Parser:
 
     # ---- ekspresi (dari presedensi terendah ke tertinggi) ---------------
     def _expr(self):
-        return self._logical()
+        return self._or()
 
     #Bug yang ditemukan
     def _or(self):
