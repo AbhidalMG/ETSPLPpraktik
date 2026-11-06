@@ -3,6 +3,8 @@
 Grammar lengkap ada di SPESIFIKASI.md bagian 3. Setiap fungsi `_nama`
 kurang lebih berpadanan dengan satu aturan grammar.
 """
+from turtle import left
+
 from . import ast_nodes as ast
 from .lexer import Token, TokenType as T, tokenize
 
@@ -87,12 +89,10 @@ class Parser:
                 self._synchronize()
         return ast.Script(statements, errors)
 
-    def _synchronize(self) -> None:
-        # Panic mode (Crafting Interpreters bab 6): buang token sampai
-        # titik aman, lalu lanjutkan parsing.
-        while not self._at_end():
-            self._advance()
-
+    def _synchronize(self):
+         while not self._at_end():
+             if self._advance().type == T.SEMICOLON:
+                return
     def _statement(self):
         if self._check_kw("SELECT"):
             return self._select()
@@ -175,7 +175,8 @@ class Parser:
         if self._match_kw("INNER"):
             kind = "INNER"
         elif self._match_kw("LEFT"):
-            kind = "LEFT"
+             self._match_kw("OUTER")
+             kind = "LEFT"
         self._expect_kw("JOIN")
         source = self._table_ref()
         self._expect_kw("ON")
@@ -210,9 +211,8 @@ class Parser:
                 rows.append(self._value_row())
             return ast.Insert(table, columns, rows, None, line=start.line)
         if self._check_kw("SELECT"):
-            # TODO(T1): dukung INSERT INTO ... SELECT ... (SPESIFIKASI.md bagian 3 dan 5).
-            raise ParseError("INSERT ... SELECT belum didukung", self._peek())
-        raise ParseError("diharapkan VALUES atau SELECT", self._peek())
+            query = self._select()
+            return ast.Insert(table, columns, [], query, line=start.line)
 
     def _value_row(self) -> list:
         self._expect(T.LPAREN, "'(' pembuka VALUES")
@@ -248,18 +248,25 @@ class Parser:
     def _expr(self):
         return self._logical()
 
-    def _logical(self):
-        # OR dan AND: operator logika biner, asosiatif kiri.
+    #Bug yang ditemukan
+    def _or(self):
+        left = self._and()
+        while self._match_kw("OR"):
+            left = ast.BinaryOp(left, "OR", self._and())
+        return left
+
+    def _and(self):
         left = self._not()
-        while self._check_kw("AND", "OR"):
-            op = self._advance().value
-            left = ast.BinaryOp(left, op, self._not())
+        while self._match_kw("AND"):
+            left = ast.BinaryOp(left, "AND", self._not())
         return left
 
     def _not(self):
         if self._match_kw("NOT"):
             return ast.UnaryOp("NOT", self._not())
         return self._comparison()
+
+    
 
     def _comparison(self):
         left = self._additive()
