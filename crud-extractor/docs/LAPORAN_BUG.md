@@ -129,7 +129,7 @@ string kosong `''` tetap string kosong, dan `'a'''` bernilai `a'`; `pemeliharaan
 
 ---
 
-## Bug 5 (R1): Pencarian scope terbalik (luar ke dalam)
+## Bug 4 (R1): Pencarian scope terbalik (luar ke dalam)
 
 **Ditemukan oleh:** audit dibantu AI, dikonfirmasi Zidane · **Diperbaiki oleh:** Zidane
 
@@ -160,7 +160,7 @@ menuju `pesanan`, dan correlated subquery (alias luar dipakai di subquery) tetap
 
 ---
 
-## Bug 6 (R2): Scope DELETE tidak pernah di-pop
+## Bug 5 (R2): Scope DELETE tidak pernah di-pop
 
 **Ditemukan oleh:** audit dibantu AI, dikonfirmasi Zidane · **Diperbaiki oleh:** Zidane
 
@@ -192,7 +192,7 @@ ketidakseimbangan push/pop alih-alih memperbaikinya dan akan menyembunyikan bug 
 
 ---
 
-## Bug 8 (P1): AND dan OR sama kuat
+## Bug 6 (P1): AND dan OR sama kuat
 
 **Ditemukan oleh:** audit dibantu AI, dikonfirmasi Abhidal · **Diperbaiki oleh:** Abhidal
 
@@ -217,7 +217,7 @@ SELECT a FROM t WHERE a = 1 OR b = 2 AND c = 3
 
 ---
 
-## Bug 9 (P2): `LEFT OUTER JOIN` gagal
+## Bug 7 (P2): `LEFT OUTER JOIN` gagal
 
 **Ditemukan oleh:** Abhidal · **Diperbaiki oleh:** Abhidal
 
@@ -247,7 +247,7 @@ elif self._match_kw("LEFT"):
 
 ---
 
-## Bug 10 (P3): Recovery membuang semua token sampai EOF
+## Bug 8 (P3): Recovery membuang semua token sampai EOF
 
 **Ditemukan oleh:** Abhidal · **Diperbaiki oleh:** Abhidal
 
@@ -279,7 +279,7 @@ test_regresi_parser_recovery_berhenti_setelah_titik_koma, test_tepi_recovery_sta
 
 ---
 
-## Bug 12 (A1): Subquery di UPDATE ditandai `U`, seharusnya `R`
+## Bug 9 (A1): Subquery di UPDATE ditandai `U`, seharusnya `R`
 
 **Ditemukan oleh:** Abhidal · **Diperbaiki oleh:** Abhidal
 
