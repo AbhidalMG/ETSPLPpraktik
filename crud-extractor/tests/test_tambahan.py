@@ -8,7 +8,9 @@ Isi dengan:
 
 from crud import ast_nodes as ast
 from crud.analyzer import analyze_statement
+from crud.lexer import TokenType as T, tokenize
 from crud.parser import parse_sql
+from crud.resolver import Resolver
 
 
 def one(sql):
@@ -16,6 +18,66 @@ def one(sql):
     assert script.errors == [], script.errors
     assert len(script.statements) == 1
     return script.statements[0]
+
+
+def test_regresi_lexer_keyword_huruf_kecil_dinormalisasi():
+    tokens = tokenize("select id from t")
+
+    assert [(token.type, token.value) for token in tokens] == [
+        (T.KEYWORD, "SELECT"),
+        (T.IDENT, "id"),
+        (T.KEYWORD, "FROM"),
+        (T.IDENT, "t"),
+        (T.EOF, ""),
+    ]
+
+
+def test_regresi_lexer_operator_tidak_sama_satu_token():
+    tokens = tokenize("a <> 1")
+
+    assert [(token.type, token.value) for token in tokens[:-1]] == [
+        (T.IDENT, "a"),
+        (T.OP, "<>"),
+        (T.NUMBER, "1"),
+    ]
+
+
+def test_regresi_lexer_kutip_ganda_dalam_string():
+    tokens = tokenize("'O''Brien'")
+
+    assert len(tokens) == 2
+    assert tokens[0].type == T.STRING
+    assert tokens[0].value == "O'Brien"
+
+
+def test_regresi_resolver_alias_dalam_menutupi_alias_luar():
+    script = parse_sql(
+        "SELECT x.id FROM pelanggan x "
+        "WHERE x.id IN (SELECT x.pelanggan_id FROM pesanan x)"
+    )
+    assert script.errors == []
+    Resolver().resolve_script(script)
+    inner_reference = next(
+        node for node in ast.iter_nodes(script)
+        if isinstance(node, ast.ColumnRef)
+        and node.qualifier == "x"
+        and node.name == "pelanggan_id"
+    )
+
+    assert inner_reference.resolved == "pesanan"
+
+
+def test_regresi_resolver_scope_delete_tidak_bocor():
+    script = parse_sql(
+        "DELETE FROM sesi s WHERE s.id = 1; "
+        "SELECT s.id FROM pengguna u"
+    )
+    assert script.errors == []
+    diagnostics = Resolver().resolve_script(script)
+
+    assert len(diagnostics) == 1
+    assert diagnostics[0].level == "error"
+    assert "alias 's' tidak terdefinisi" in diagnostics[0].message
 
 
 # Tes regresi: setiap tes menangkap salah satu bug yang tercatat di LAPORAN_BUG.md.

@@ -142,18 +142,19 @@ diperbaiki:
 
 ## 4. Pembagian kerja
 
-Kami membagi modul menjadi dua bagian, dan tiap anggota memperbaiki modul bagiannya:
+Pembagian kerja yang dicatat kelompok:
 
-- **Abhidal:** `parser.py`, `ast_nodes.py`, dan `analyzer.py`. Mencakup Bug 8-12 di
-  LAPORAN_BUG.md (presedensi `AND`/`OR`, `LEFT OUTER JOIN`, error recovery, `INSERT ... SELECT`,
-  dan subquery di `UPDATE`).
-- **Zidane:** `lexer.py`, `resolver.py`, `pipeline.py`, `cli.py`, dan `evaluate.py`. Mencakup Bug
-  1-7 (keyword huruf kecil, `<>`, escape `''`, komentar blok, urutan lookup scope, `_pop` pada
-  `DELETE`, dan kolom tanpa qualifier).
+- **Abhidal:** `parser.py`, `ast_nodes.py`, dan `analyzer.py`; menangani Bug 6-9
+  (presedensi `AND`/`OR`, `LEFT OUTER JOIN`, error recovery, dan pembacaan subquery pada
+  `UPDATE`) serta TODO T1 (`INSERT ... SELECT`).
+- **Zidane:** `lexer.py`, `resolver.py`, `pipeline.py`, `cli.py`, dan `evaluate.py`;
+  menangani Bug 1-5 (keyword tidak peka kapitalisasi, operator `<>`, escape string `''`,
+  urutan lookup scope, dan scope `DELETE`) serta TODO T2 (resolusi kolom tanpa qualifier)
+  dan T3 (komentar blok).
 
-Alasan pembagian: parser adalah file terbesar (±14 KB) ditambah analyzer, sedangkan lexer,
-resolver, dan pipeline lebih kecil tetapi mencakup dua TODO. Modul dikerjakan secara paralel,
-dengan perbaikan lexer diselesaikan lebih dulu karena parser bergantung pada token yang benar.
+Pembagian ini mengikuti ukuran dan tanggung jawab modul: parser merupakan modul terbesar,
+sementara lexer perlu diselesaikan lebih dulu karena parser bergantung pada token yang benar.
+Ketiga TODO yang tercatat pada `LAPORAN_BUG.md` kini sudah diimplementasikan.
 
 Untuk memastikan kedua anggota memahami seluruh pekerjaan, kami melakukan:
 
@@ -166,7 +167,14 @@ Untuk memastikan kedua anggota memahami seluruh pekerjaan, kami melakukan:
 Penggunaan AI dicatat di `docs/LOG_AI.md` dan pada bagian "Peran AI" di setiap entri
 LAPORAN_BUG.md.
 
-## 5. Rujukan
+## 5. Status verifikasi
+
+Suite pengujian saat ini lulus **44 tes** (`python -m pytest -q`). Evaluasi terhadap
+27 triple di empat berkas berlabel menghasilkan parser precision/recall/F1 **1.00/1.00/1.00**
+dan baseline regex **0.65/0.81/0.72** (`python evaluate.py`). Hasil evaluasi lengkap tercantum
+di bagian 1.
+
+## 6. Rujukan
 
 Nystrom, Robert. *Crafting Interpreters*. Genever Benning, 2021.
 https://craftinginterpreters.com

@@ -3,30 +3,29 @@
 Salin blok di bawah untuk setiap bug. Bagian **Akar masalah** wajib ditulis dengan kata-kata
 sendiri dan memakai konsep dari *Crafting Interpreters* (sebutkan bab). Bagian ini diuji lisan.
 
-Ringkasan: 12 temuan (9 bug + 3 TODO). Pembagian: Zidane (lexer, resolver), Abhidal (parser, analyzer).
+Ringkasan: 9 bug diperbaiki dan 3 TODO implementasi diselesaikan. Nomor Bug 1-9
+di bawah digunakan konsisten di laporan dan test regresi. Pembagian kerja awal:
+Zidane (lexer, resolver), Abhidal (parser, analyzer).
 
-| ID | Modul | Spek | Ringkasan | Jenis |
+| Bug | Modul | Spek | Ringkasan | Status |
 | --- | --- | --- | --- | --- |
-| L1 | lexer.py | 2.2 | Keyword huruf kecil tidak dikenali | bug |
-| L2 | lexer.py | 2.5 | `<>` dipecah jadi `<` dan `>` | bug |
-| L3 | lexer.py | 2.4 | `''` di dalam string tidak ditangani | bug |
-| T3 | lexer.py | 2.3 | Komentar blok `/* */` | TODO |
-| R1 | resolver.py | 4.3 | Pencarian scope terbalik (luar ke dalam) | bug |
-| R2 | resolver.py | 4.5 | Scope DELETE tidak pernah di-pop | bug |
-| T2 | resolver.py | 4.3 | Kolom tanpa qualifier | TODO |
-| P1 | parser.py | 3.1 | AND dan OR sama kuat | bug |
-| P2 | parser.py | 3 | `LEFT OUTER JOIN`: OUTER tidak dikonsumsi | bug |
-| P3 | parser.py | 6 | Recovery membuang semua token sampai EOF | bug |
-| T1 | parser.py | 3 dan 5 | `INSERT ... SELECT` | TODO |
-| A1 | analyzer.py | 5 | Subquery di UPDATE ditandai `U`, harusnya `R` | bug |
+| 1 (L1) | lexer.py | 2.2 | Keyword huruf kecil tidak dikenali | Diperbaiki |
+| 2 (L2) | lexer.py | 2.5 | `<>` dipecah jadi `<` dan `>` | Diperbaiki |
+| 3 (L3) | lexer.py | 2.4 | `''` di dalam string tidak ditangani | Diperbaiki |
+| 4 (R1) | resolver.py | 4.3 | Pencarian scope terbalik (luar ke dalam) | Diperbaiki |
+| 5 (R2) | resolver.py | 4.5 | Scope DELETE tidak pernah di-pop | Diperbaiki |
+| 6 (P1) | parser.py | 3.1 | AND dan OR sama kuat | Diperbaiki |
+| 7 (P2) | parser.py | 3 | `LEFT OUTER JOIN`: OUTER tidak dikonsumsi | Diperbaiki |
+| 8 (P3) | parser.py | 6 | Recovery membuang semua token sampai EOF | Diperbaiki |
+| 9 (A1) | analyzer.py | 5 | Subquery di UPDATE ditandai `U`, harusnya `R` | Diperbaiki |
 
-## Tiga bagian TODO (bukan bug)
+## TODO implementasi yang diselesaikan
 
-| Kode | Lokasi | Pendekatan | Dikerjakan oleh | Test |
-| --- | --- | --- | --- | --- |
-| T1 | `parser.py::_insert` | Parse `select_stmt` setelah daftar kolom, simpan di `Insert.query` dengan `values=[]` | Abhidal | `test_regresi_parser_insert_select` |
-| T2 | `resolver.py::_column` | Kolom tanpa qualifier: lihat hanya scope terdalam; 1 tabel → resolve, >1 → warning ambigu, 0 → warning | Zidane | `test_regresi_resolver_kolom_tanpa_qualifier_ambigu` |
-| T3 | `lexer.py::_scan_token` | Konsumsi `/* ... */` lintas baris; tidak tertutup → `LexError` | Zidane | `test_regresi_lexer_komentar_blok_dilewati_dan_posisi_benar` |
+| Kode | Lokasi | Pendekatan | Test yang tersedia |
+| --- | --- | --- | --- |
+| T1 | `parser.py::_insert` | Parse `SELECT` setelah daftar kolom dan simpan di `Insert.query` dengan `values=[]` | `test_insert_select` (`tests/test_parser.py`) |
+| T2 | `resolver.py::_column` | Tanpa qualifier: satu tabel pada scope terdalam di-resolve; beberapa atau nol tabel menghasilkan warning | `test_kolom_tanpa_qualifier_satu_tabel` (`tests/test_resolver.py`) |
+| T3 | `lexer.py::_scan_token` | Lewati `/* ... */` lintas baris dan laporkan `LexError` bila komentar tidak ditutup | `test_komentar_blok` (`tests/test_lexer.py`) |
 
 ---
 
@@ -58,8 +57,8 @@ disimpan sebagai `text.upper()`. Identifier tetap memakai teks asli, sehingga `s
 IDENT (yang dicocokkan satu kata utuh, bukan awalan). Alternatif yang dipertimbangkan: mengubah seluruh source ke
 huruf besar sebelum lexing. Tidak dipilih karena ikut mengubah isi string literal.
 
-**Test regresi.** `test_regresi_lexer_keyword_huruf_kecil_dinormalisasi` di `tests/test_tambahan.py` (gagal
-sebelum, lulus sesudah). Test terlihat `test_keyword_huruf_kecil` ikut lulus.
+**Test regresi.** `test_regresi_lexer_keyword_huruf_kecil_dinormalisasi` di `tests/test_tambahan.py`;
+`test_keyword_huruf_kecil` di `tests/test_lexer.py` juga menguji perilaku ini.
 
 **Peran AI.** AI menemukan bug saat mengaudit `lexer.py` terhadap spek 2.2 dan mengusulkan perbaikan. Kami
 memverifikasi dengan menjalankan test `test_keyword_huruf_kecil` (gagal sebelum perbaikan), memeriksa token
@@ -91,7 +90,7 @@ terpanjang yang cocok. Cabang `<` hanya memeriksa karakter `=` setelahnya (`<=`)
 Alternatif: memakai tabel operator dua karakter lalu mencari yang terpanjang. Tidak dipilih karena perubahan
 lebih besar daripada kebutuhan dan menambah tabel baru yang harus dijaga konsisten dengan spek.
 
-**Test regresi.** `test_regresi_lexer_operator_tidak_sama_satu_token`.
+**Test regresi.** `test_regresi_lexer_operator_tidak_sama_satu_token` di `tests/test_tambahan.py`.
 
 **Peran AI.** AI menemukan dan mengusulkan perbaikan. Verifikasi: menjalankan ulang `laporan_penjualan.sql` (error baris 6 hilang
 dan statement SELECT masuk matrix), serta `evaluate.py` untuk file berlabel.
@@ -122,7 +121,8 @@ tambahkan satu `'` ke isi, lalu lanjutkan loop. Alternatif: pasca-proses dua str
 Tidak dipilih karena itu memindahkan tanggung jawab lexical ke parser dan salah menggabungkan dua literal
 yang memang bersebelahan.
 
-**Test regresi.** `test_regresi_lexer_kutip_ganda_dalam_string`; kasus tepi `test_tepi_string_kosong_dan_kutip_di_ujung`.
+**Test regresi.** `test_regresi_lexer_kutip_ganda_dalam_string` di `tests/test_tambahan.py`.
+Kasus string biasa juga diuji oleh `test_string_biasa` di `tests/test_lexer.py`.
 
 **Peran AI.** AI menemukan dan mengusulkan perbaikan. Verifikasi: token `'O''Brien'` menjadi satu STRING `O'Brien`,
 string kosong `''` tetap string kosong, dan `'a'''` bernilai `a'`; `pemeliharaan.sql` diproses tanpa error.
@@ -211,7 +211,7 @@ SELECT a FROM t WHERE a = 1 OR b = 2 AND c = 3
 
 **Perbaikan.** parser.py:_logical dipecah menjadi _or (loop OR) dan _and(loop AND, operan dari _not); _expr memanggil _or
 
-**Test regresi.** test_regresi_parser_and_lebih_kuat_dari_or
+**Test regresi.** `test_regresi_presedensi_and_lebih_tinggi_dari_or` di `tests/test_tambahan.py`.
 
 **Peran AI.** AI menemukan dan mengusulkan perbaikan bug. Kami memverivikasi dengan mencetak AST dengan --ast, kami juga melakukan cek ulang pada spesifikasi dan tabel presedensi.
 
@@ -241,7 +241,7 @@ elif self._match_kw("LEFT"):
     kind = "LEFT"
 ```
 
-**Test regresi.** test_regresi_parser_left_outer_join
+**Test regresi.** `test_regresi_left_outer_join_diterima` di `tests/test_tambahan.py`.
 
 **Peran AI.** AI menemukan BUG ini, cara kami memverifikasinya adalah dnegan membandingkan _join dengan baris join di grammar, menjalankan pemeliharaan.sql dan memeriksa crm.alamat masuk sebagai R
 
@@ -273,7 +273,7 @@ def _synchronize(self):
 ```
 
 **Test regresi.**
-test_regresi_parser_recovery_berhenti_setelah_titik_koma, test_tepi_recovery_statement_terakhir_tanpa_titik_koma
+`test_regresi_error_recovery_melanjutkan_setelah_semikolon` di `tests/test_tambahan.py`.
 
 **Peran AI.** AI menemukan BUG ini, kami melakukan verifikasi dengan mengecek campuran_error.sql dan ternyata menghasilkan 1 error dan 3 statement (baris 2,6, dan 8) serta evaluate.py memberi parser recall 1.00 untuk file berlabel
 
@@ -304,7 +304,7 @@ _collect(assignment.value, usage, "R")
 _collect(stmt.where, usage, "R")
 ```
 
-**Test regresi.** test_regresi_analyzer_subquery_di_update_adalah_read
+**Test regresi.** `test_regresi_subquery_di_update_dibaca_sebagai_read` di `tests/test_tambahan.py`.
 
 **Peran AI.**
 AI menemukan bug, diverifikasi dengan membaca ulang spek, menjalankan audit.sql dan laporan_penjualan.sql dan mencocokkan dengan label manual
